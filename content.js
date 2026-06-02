@@ -38,7 +38,13 @@ document.addEventListener("mouseup", async () => {
     return;
   }
 
-  const rect = range.getBoundingClientRect();
+  let rect;
+  try {
+    rect = range.getBoundingClientRect();
+  } catch (err) {
+    if (DEBUG) console.warn("[katakana-highlighter] failed to get range bounds:", err);
+    rect = { left: 24, top: 24, bottom: 24 };
+  }
 
   const response = await chrome.runtime.sendMessage({
     type: "CONVERT_READING",
@@ -61,7 +67,14 @@ chrome.runtime.onMessage.addListener((message) => {
 
   const selection = window.getSelection();
   const range = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
-  const rect = range ? range.getBoundingClientRect() : { left: 24, top: 24, bottom: 24 };
+  let rect = { left: 24, top: 24, bottom: 24 };
+  if (range) {
+    try {
+      rect = range.getBoundingClientRect();
+    } catch (err) {
+      if (DEBUG) console.warn("[katakana-highlighter] failed to get range bounds:", err);
+    }
+  }
 
   showBubble(
     rect,
