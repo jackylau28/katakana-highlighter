@@ -6,7 +6,6 @@
 - 支援右鍵選單操作。
 - 可快速切換輸出模式：`カタカナ` 或 `平仮名`。
 - 泡泡可釘選，並可加筆記。
-- 🔊 發音功能（Google Cloud Text-to-Speech API），支援中性/女性/男性發音，可點擊停止。
 - 歷史記錄功能，可複製、加筆記、刪除、匯出 CSV。
 - 泡泡設定：背景色、顯示位置（下方/上方/頁面底部固定）、自動消失秒數。
 
@@ -91,14 +90,6 @@
 - 漢字轉讀音使用 `Yahoo Japan Furigana API`。
 - 需要先設定 Yahoo Developer 的 `Client ID`。
 
-## 發音設定（Google Cloud TTS）
-
-1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
-2. 建立或選擇一個專案，啟用 **Cloud Text-to-Speech API**
-3. 前往 **API 和服務** → **憑證** → 建立 **API 金鑰**
-4. 複製 API 金鑰，貼到外掛設定頁的 **Google Cloud API Key** 欄位
-5. 重新載入外掛（`chrome://extensions` → 🔄）即可使用
-
 ## 安裝步驟
 1. 打開 `chrome://extensions`。
 2. 開啟 **Developer mode（開發人員模式）**。
@@ -116,4 +107,3 @@
 7. 泡泡上的 `📋 複製` 可一鍵複製假名。
 8. 釘選泡泡後可加筆記，筆記會自動保存到歷史記錄。
 9. popup 可檢視歷史記錄，支持複製、加/改筆記、刪除、匯出 CSV。
-10. 泡泡上的 `🔊 發音` 可按日語發音；發音中再次點擊可停止。

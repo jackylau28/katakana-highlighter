@@ -193,19 +193,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SYNTHESIZE_SPEECH") {
-    (async () => {
-      try {
-        const { voiceGender = "NEUTRAL" } = await chrome.storage.sync.get("voiceGender");
-        const audioData = await synthesizeSpeech(message.text, voiceGender);
-        sendResponse({ ok: true, audioContent: audioData });
-      } catch (err) {
-        sendResponse({ ok: false, error: String(err) });
-      }
-    })();
-    return true;
-  }
-
 });
 
 // 主要轉換流程：先檢查日文，再呼叫 Yahoo API，失敗時走本地 fallback。
@@ -324,32 +311,4 @@ function normalizeMode(mode) {
 // 檢查字串是否包含日文（平假名/片假名/漢字）。
 function containsJapanese(text) {
   return /[぀-ヿ㐀-鿿]/.test(text || "");
-}
-
-// 使用 Google Cloud Text-to-Speech API 合成日文語音（API Key 方式）。
-async function synthesizeSpeech(text, apiKey, voiceGender) {
-  const response = await fetch(
-    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        input: { text },
-        voice: {
-          languageCode: "ja-JP",
-          name: "ja-JP-Standard-A",
-          ssmlGender: voiceGender || "NEUTRAL"
-        },
-        audioConfig: { audioEncoding: "MP3" }
-      })
-    }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "Unknown error");
-    throw new Error(`TTS API error (${response.status}): ${errText}`);
-  }
-
-  const json = await response.json();
-  return json.audioContent; // base64-encoded MP3
 }
