@@ -197,6 +197,49 @@ async function showBubble(rect, sourceText, convertedText, outputMode, historyIt
   });
   tools.appendChild(copyBtn);
 
+  // 🔊 發音按鈕（使用 Google Cloud TTS API）
+  const playBtn = document.createElement("button");
+  playBtn.className = "khb-pin-btn";
+  playBtn.type = "button";
+  playBtn.title = "發音";
+  playBtn.textContent = "🔊 發音";
+  playBtn.addEventListener("click", async () => {
+    try {
+      playBtn.textContent = "⏳ 發音中...";
+      playBtn.disabled = true;
+      const response = await chrome.runtime.sendMessage({
+        type: "SYNTHESIZE_SPEECH",
+        text: convertedText
+      });
+      if (!response?.ok) {
+        playBtn.textContent = "❌ 失敗";
+        setTimeout(() => { playBtn.textContent = "🔊 發音"; playBtn.disabled = false; }, 1500);
+        if (DEBUG) console.warn("[katakana-highlighter] TTS error:", response?.error);
+        return;
+      }
+      // base64 → blob → audio element
+      const audioBytes = atob(response.audioContent);
+      const byteArray = new Uint8Array(audioBytes.length);
+      for (let i = 0; i < audioBytes.length; i++) {
+        byteArray[i] = audioBytes.charCodeAt(i);
+      }
+      const blob = new Blob([byteArray], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        playBtn.textContent = "🔊 發音";
+        playBtn.disabled = false;
+      };
+      audio.play();
+    } catch (err) {
+      if (DEBUG) console.warn("[katakana-highlighter] playback failed:", err);
+      playBtn.textContent = "🔊 發音";
+      playBtn.disabled = false;
+    }
+  });
+  tools.appendChild(playBtn);
+
   // 🗒️ 笔记区域（只在钉选且有 historyItemId 时显示）
   const noteArea = document.createElement("div");
   noteArea.style.display = "none";

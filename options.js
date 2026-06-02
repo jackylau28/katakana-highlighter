@@ -4,6 +4,8 @@ const bubbleBgColorInput = document.getElementById("bubbleBgColor");
 const bubblePositionSelect = document.getElementById("bubblePosition");
 const bubbleDurationInput = document.getElementById("bubbleDuration");
 const historyOnOffInput = document.getElementById("historyOnOff");
+const googleApiKeyInput = document.getElementById("googleApiKey");
+const voiceGenderSelect = document.getElementById("voiceGender");
 const saveBtn = document.getElementById("saveBtn");
 const resetBtn = document.getElementById("resetBtn");
 const statusEl = document.getElementById("status");
@@ -13,7 +15,9 @@ const DEFAULTS = {
   bubbleBgColor: "#0f172a",
   bubblePosition: "bottom",
   bubbleDuration: 0,
-  historyOnOff: "on"
+  historyOnOff: "on",
+  googleApiKey: "",
+  voiceGender: "NEUTRAL"
 };
 
 // 載入設定頁時，先讀取已儲存的設定。
@@ -26,15 +30,19 @@ saveBtn.addEventListener("click", async () => {
   const bubblePosition = bubblePositionSelect.value || DEFAULTS.bubblePosition;
   const bubbleDuration = Math.max(0, parseInt(bubbleDurationInput.value, 10) || 0);
   const historyOnOff = historyOnOffInput.value || DEFAULTS.historyOnOff;
+  const googleApiKey = googleApiKeyInput.value.trim() || DEFAULTS.googleApiKey;
+  const voiceGender = voiceGenderSelect.value || DEFAULTS.voiceGender;
 
   await chrome.storage.sync.set({
     yahooClientId,
     bubbleBgColor,
     bubblePosition,
     bubbleDuration,
-    historyOnOff
+    historyOnOff,
+    googleApiKey,
+    voiceGender
   });
-  if (DEBUG) console.log("[katakana-highlighter] saved settings:", { bubbleBgColor, bubblePosition, bubbleDuration, historyOnOff });
+  if (DEBUG) console.log("[katakana-highlighter] saved settings:", { bubbleBgColor, bubblePosition, bubbleDuration, historyOnOff, voiceGender });
   statusEl.textContent = "已儲存";
 });
 
@@ -53,13 +61,17 @@ async function init() {
     bubbleBgColor = DEFAULTS.bubbleBgColor,
     bubblePosition = DEFAULTS.bubblePosition,
     bubbleDuration = DEFAULTS.bubbleDuration,
-    historyOnOff = DEFAULTS.historyOnOff
+    historyOnOff = DEFAULTS.historyOnOff,
+    googleApiKey = DEFAULTS.googleApiKey,
+    voiceGender = DEFAULTS.voiceGender
   } = await chrome.storage.sync.get([
     "yahooClientId",
     "bubbleBgColor",
     "bubblePosition",
     "bubbleDuration",
-    "historyOnOff"  
+    "historyOnOff",
+    "googleApiKey",
+    "voiceGender"
   ]);
 
   clientIdInput.value = yahooClientId;
@@ -67,4 +79,6 @@ async function init() {
   bubblePositionSelect.value = bubblePosition;
   bubbleDurationInput.value = bubbleDuration;
   historyOnOffInput.value = historyOnOff;
+  googleApiKeyInput.value = googleApiKey;
+  voiceGenderSelect.value = voiceGender;
 }

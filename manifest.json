@@ -4,7 +4,7 @@
   "description": "Convert highlighted Japanese text (including Kanji) to Katakana and show it inline.",
   "version": "1.0.0",
   "permissions": ["storage", "contextMenus"],
-  "host_permissions": ["https://jlp.yahooapis.jp/*"],
+  "host_permissions": ["https://jlp.yahooapis.jp/*", "https://texttospeech.googleapis.com/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
