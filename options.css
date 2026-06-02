@@ -52,6 +52,26 @@ select {
   background: #fff;
 }
 
+input[type="color"] {
+  width: 64px;
+  height: 40px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+input[type="number"] {
+  width: 120px;
+}
+
+select {
+  cursor: pointer;
+}
+
+h2 {
+  margin: 16px 0 10px;
+  font-size: 17px;
+}
+
 button {
   border: 0;
   background: var(--accent);

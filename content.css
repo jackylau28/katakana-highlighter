@@ -3,7 +3,7 @@
   z-index: 2147483647;
   display: none;
   max-width: min(600px, calc(100vw - 24px));
-  background: #0f172a;
+  background-color: #0f172a;
   color: #e2e8f0;
   border: 1px solid #334155;
   border-radius: 10px;

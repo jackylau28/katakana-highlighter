@@ -35,10 +35,11 @@
 ### content.js
 | 函式 | 說明 |
 |------|------|
-| `showBubble(rect, sourceText, convertedText, outputMode)` | 在選取位置顯示轉換結果泡泡 |
+| `showBubble(rect, sourceText, convertedText, outputMode)` | 在選取位置顯示轉換結果泡泡，套用自訂設定（背景色、位置、自動消失） |
 | `containsJapanese(text)` | 前端快速檢查日文字元 |
-| `hideTransientBubble()` | 隱藏暫存泡泡 |
+| `hideTransientBubble()` | 隱藏暫存泡泡並清除計時器 |
 | `createBubbleElement()` | 建立泡泡 DOM 元素 |
+| `clearAutoHideTimer()` | 清除自動消失計時器 |
 
 ### popup.js
 | 函式 | 說明 |
@@ -50,13 +51,24 @@
 ### options.js
 | 函式 | 說明 |
 |------|------|
-| `init()` | 載入已儲存的 Client ID 並填入欄位 |
+| `init()` | 載入已儲存的所有設定（Client ID、泡泡設定） |
+| `saveBtn` handler | 儲存所有設定至 chrome.storage.sync |
 
 ## 訊息流程
 
 1. **自動偵測**：反白日文 → content.js 發送 `CONVERT_READING` → background.js 呼叫 API → 回傳結果 → 顯示泡泡
 2. **右鍵選單**：右鍵 → `Convert selection` → background.js 呼叫 API → 發送 `SHOW_READING_RESULT` → content.js 顯示泡泡
 3. **模式切換**：popup 或右鍵選單 → `chrome.storage.sync.set({ outputMode })`
+
+## 設定選項
+
+在外掛設定頁（Options）可自訂以下泡泡行為：
+
+| 設定 | 預設值 | 說明 |
+|------|--------|------|
+| `bubbleBgColor` | `#0f172a` | 泡泡背景色 |
+| `bubblePosition` | `bottom` | 泡泡顯示位置：`bottom`（選取下方）/ `top`（選取上方） |
+| `bubbleDuration` | `0` | 自動消失秒數，`0` = 永不自動消失 |
 
 ## 注意事項
 - 漢字轉讀音使用 `Yahoo Japan Furigana API`。

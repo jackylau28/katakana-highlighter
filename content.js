@@ -1,4 +1,5 @@
 let transientBubbleEl = null;
+let autoHideTimer = null;
 
 // 當選取取消（沒有反白）時，隱藏浮動結果泡泡。
 document.addEventListener("selectionchange", () => {
@@ -70,11 +71,31 @@ chrome.runtime.onMessage.addListener((message) => {
 });
 
 // 在反白位置附近顯示轉換結果泡泡。
-function showBubble(rect, sourceText, convertedText, outputMode) {
+async function showBubble(rect, sourceText, convertedText, outputMode) {
 
   if(sourceText== convertedText){
     return;
   }
+
+  // 讀取使用者自訂的泡泡設定。
+  let bubbleBgColor = "#0f172a";
+  let bubblePosition = "bottom";
+  let bubbleDuration = 0;
+
+  try {
+    const settings = await chrome.storage.sync.get([
+      "bubbleBgColor",
+      "bubblePosition",
+      "bubbleDuration"
+    ]);
+    console.log("[katakana-highlighter] loaded settings:", settings);
+    if (settings.bubbleBgColor) bubbleBgColor = settings.bubbleBgColor;
+    if (settings.bubblePosition) bubblePosition = settings.bubblePosition;
+    if (typeof settings.bubbleDuration === "number") bubbleDuration = settings.bubbleDuration;
+  } catch (err) {
+    console.warn("[katakana-highlighter] failed to load settings, using defaults:", err);
+  }
+
   // 每次只維持一個「暫存泡泡」；已釘選泡泡會保留在頁面上。
   if (!transientBubbleEl) {
     transientBubbleEl = createBubbleElement();
@@ -82,6 +103,12 @@ function showBubble(rect, sourceText, convertedText, outputMode) {
     document.body.appendChild(transientBubbleEl);
   }
   transientBubbleEl.innerHTML = "";
+
+  // 清除之前的自動消失計時器。
+  clearAutoHideTimer();
+
+  // 套用背景色（使用 background 簡寫確保完全覆蓋 CSS）。
+  transientBubbleEl.style.background = bubbleBgColor;
 
   // 泡泡工具列：提供釘選切換，避免取消反白後自動消失。
   const tools = document.createElement("div");
@@ -152,13 +179,58 @@ function showBubble(rect, sourceText, convertedText, outputMode) {
   transientBubbleEl.appendChild(kata);
   transientBubbleEl.appendChild(tools);
 
-  const top = window.scrollY + rect.bottom + 8;
-  const left = window.scrollX + rect.left;
-
   transientBubbleEl.classList.remove("pinned");
-  transientBubbleEl.style.top = `${top}px`;
-  transientBubbleEl.style.left = `${left}px`;
-  transientBubbleEl.style.display = "block";
+
+  // 根據位置設定計算定位。
+  if (bubblePosition === "fixed-bottom") {
+    // 固定在頁面底部，全寬顯示，不隨捲動移動。
+    transientBubbleEl.style.position = "fixed";
+    transientBubbleEl.style.bottom = "0";
+    transientBubbleEl.style.top = "";
+    transientBubbleEl.style.left = "0";
+    transientBubbleEl.style.right = "";
+    transientBubbleEl.style.maxWidth = "80vw";
+    transientBubbleEl.style.borderRadius = "10px";
+    transientBubbleEl.style.left = "10vw";
+    transientBubbleEl.style.display = "block";
+  } else {
+    // absolute 定位：先設定水平位置再測量高度。
+    transientBubbleEl.style.position = "absolute";
+    transientBubbleEl.style.bottom = "";
+    transientBubbleEl.style.right = "";
+    transientBubbleEl.style.maxWidth = "";
+    transientBubbleEl.style.borderRadius = "";
+
+    const left = window.scrollX + rect.left;
+    transientBubbleEl.style.left = `${left}px`;
+
+    // 暫時顯示以測量實際高度，但保持不可見避免閃爍。
+    transientBubbleEl.style.visibility = "hidden";
+    transientBubbleEl.style.display = "block";
+    const bubbleHeight = transientBubbleEl.offsetHeight;
+    transientBubbleEl.style.visibility = "";
+
+    let top;
+    if (bubblePosition === "top") {
+      top = window.scrollY + rect.top - bubbleHeight - 8;
+      if (top < window.scrollY) {
+        top = window.scrollY + rect.bottom + 8; // 上方空間不足時改放下方
+      }
+    } else {
+      top = window.scrollY + rect.bottom + 8;
+    }
+
+    transientBubbleEl.style.top = `${top}px`;
+  }
+
+  // 自動消失計時器（僅對非釘選泡泡生效）。
+  if (bubbleDuration > 0) {
+    autoHideTimer = setTimeout(() => {
+      if (transientBubbleEl && transientBubbleEl.dataset.pinned !== "true") {
+        hideTransientBubble();
+      }
+    }, bubbleDuration * 1000);
+  }
 }
 
 // 前端快速檢查：只處理包含日文字元的反白內容。
@@ -166,8 +238,17 @@ function containsJapanese(text) {
   return /[\u3040-\u30ff\u3400-\u9fff]/.test(text);
 }
 
+// 清除自動消失計時器。
+function clearAutoHideTimer() {
+  if (autoHideTimer) {
+    clearTimeout(autoHideTimer);
+    autoHideTimer = null;
+  }
+}
+
 // 隱藏已建立的結果泡泡。
 function hideTransientBubble() {
+  clearAutoHideTimer();
   if (transientBubbleEl) {
     transientBubbleEl.style.display = "none";
   }

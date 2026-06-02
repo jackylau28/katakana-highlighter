@@ -20,6 +20,24 @@
       <p id="status" aria-live="polite"></p>
 
       <hr />
+
+      <h2>Bubble Settings</h2>
+
+      <label for="bubbleBgColor">Background Color</label>
+      <input id="bubbleBgColor" type="color" />
+
+      <label for="bubblePosition">Position</label>
+      <select id="bubblePosition">
+        <option value="bottom">Below selection (Bottom)</option>
+        <option value="top">Above selection (Top)</option>
+        <option value="fixed-bottom">Fixed to page bottom</option>
+      </select>
+
+      <label for="bubbleDuration">Auto-Disappear (seconds)</label>
+      <input id="bubbleDuration" type="number" min="0" max="60" step="1" placeholder="0 = never" />
+      <p class="hint" style="margin-top:-6px;">Set to 0 to keep the bubble visible until selection is cleared.</p>
+
+      <hr />
       <p class="hint">
         Create your app at Yahoo Developer Network and copy Client ID.
       </p>
