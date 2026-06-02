@@ -1,0 +1,61 @@
+.katakana-highlight-bubble {
+  position: absolute;
+  z-index: 2147483647;
+  display: none;
+  max-width: min(600px, calc(100vw - 24px));
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+.katakana-highlight-bubble.pinned {
+  border-color: #0ea5e9;
+}
+
+.katakana-highlight-bubble .khb-tools {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.katakana-highlight-bubble .khb-pin-btn {
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.katakana-highlight-bubble .khb-pin-btn:hover {
+  border-color: #64748b;
+}
+
+.katakana-highlight-bubble .khb-source {
+  opacity: 0.85;
+}
+
+.katakana-highlight-bubble .khb-arrow {
+  opacity: 0.65;
+  margin: 2px 0;
+}
+
+.katakana-highlight-bubble .khb-label {
+  opacity: 0.8;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.katakana-highlight-bubble .khb-katakana {
+  color: #67e8f9;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

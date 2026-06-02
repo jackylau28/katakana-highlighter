@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Japanese Highlight to Katakana</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <h1>轉換模式</h1>
+      <div class="mode-group" role="radiogroup" aria-label="Output mode">
+        <button id="modeKatakana" class="mode-btn" type="button">カタカナ</button>
+        <button id="modeHiragana" class="mode-btn" type="button">平仮名</button>
+      </div>
+      <p id="modeStatus" class="status" aria-live="polite"></p>
+
+      <hr />
+
+      <p id="clientStatus" class="hint"></p>
+      <button id="openOptions" class="secondary-btn" type="button">打開設定頁</button>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

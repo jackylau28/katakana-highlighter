@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Japanese Highlight to Katakana",
+  "description": "Convert highlighted Japanese text (including Kanji) to Katakana and show it inline.",
+  "version": "1.0.0",
+  "permissions": ["storage", "contextMenus"],
+  "host_permissions": ["https://jlp.yahooapis.jp/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Japanese Highlight to Katakana",
+    "default_popup": "popup.html"
+  }
+}
