@@ -326,27 +326,13 @@ function containsJapanese(text) {
   return /[぀-ヿ㐀-鿿]/.test(text || "");
 }
 
-// 使用 Google Cloud Text-to-Speech API 合成日文語音（OAuth2 授權）。
-async function synthesizeSpeech(text, voiceGender) {
-  // 透過 chrome.identity 取得 OAuth2 token
-  const token = await new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(token);
-      }
-    });
-  });
-
+// 使用 Google Cloud Text-to-Speech API 合成日文語音（API Key 方式）。
+async function synthesizeSpeech(text, apiKey, voiceGender) {
   const response = await fetch(
-    "https://texttospeech.googleapis.com/v1/text:synthesize",
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         input: { text },
         voice: {

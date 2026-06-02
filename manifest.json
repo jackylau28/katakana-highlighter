@@ -3,12 +3,8 @@
   "name": "Japanese Highlight to Katakana",
   "description": "Convert highlighted Japanese text (including Kanji) to Katakana and show it inline.",
   "version": "1.0.0",
-  "permissions": ["storage", "contextMenus", "identity"],
+  "permissions": ["storage", "contextMenus"],
   "host_permissions": ["https://jlp.yahooapis.jp/*","https://texttospeech.googleapis.com/*"],
-  "oauth2": {
-    "client_id": "請替換成你的Google OAuth Client ID.apps.googleusercontent.com",
-    "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
-  },
   "background": {
     "service_worker": "background.js",
     "type": "module"

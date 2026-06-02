@@ -95,12 +95,9 @@
 
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
 2. 建立或選擇一個專案，啟用 **Cloud Text-to-Speech API**
-3. 前往 **API 和服務** → **憑證** → 建立 **OAuth 2.0 Client ID**
-   - 應用程式類型：選「**桌面應用程式**」
-4. 複製 Client ID（格式：`xxx.apps.googleusercontent.com`）
-5. 打開專案中的 `manifest.json`，將 `oauth2.client_id` 替換成你的 Client ID
-6. 重新載入外掛（`chrome://extensions` → 🔄）
-7. 第一次點 🔊 發音 時 Chrome 會要求授權，同意即可
+3. 前往 **API 和服務** → **憑證** → 建立 **API 金鑰**
+4. 複製 API 金鑰，貼到外掛設定頁的 **Google Cloud API Key** 欄位
+5. 重新載入外掛（`chrome://extensions` → 🔄）即可使用
 
 ## 安裝步驟
 1. 打開 `chrome://extensions`。
