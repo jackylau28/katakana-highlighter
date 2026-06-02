@@ -153,7 +153,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: newHistoryItem.id });
         }     else {
             sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: null });
-        }   
+        }
       } catch (err) {
         sendResponse({ ok: false, error: String(err) });
       }
@@ -189,6 +189,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       await clearHistory();
       sendResponse({ ok: true });
+    })();
+    return true;
+  }
+
+  if (message?.type === "SYNTHESIZE_SPEECH") {
+    (async () => {
+      try {
+        const { voiceGender = "NEUTRAL" } = await chrome.storage.sync.get("voiceGender");
+        const audioData = await synthesizeSpeech(message.text, voiceGender);
+        sendResponse({ ok: true, audioContent: audioData });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err) });
+      }
     })();
     return true;
   }
@@ -311,4 +324,46 @@ function normalizeMode(mode) {
 // 檢查字串是否包含日文（平假名/片假名/漢字）。
 function containsJapanese(text) {
   return /[぀-ヿ㐀-鿿]/.test(text || "");
+}
+
+// 使用 Google Cloud Text-to-Speech API 合成日文語音（OAuth2 授權）。
+async function synthesizeSpeech(text, voiceGender) {
+  // 透過 chrome.identity 取得 OAuth2 token
+  const token = await new Promise((resolve, reject) => {
+    chrome.identity.getAuthToken({ interactive: true }, (token) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(token);
+      }
+    });
+  });
+
+  const response = await fetch(
+    "https://texttospeech.googleapis.com/v1/text:synthesize",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        input: { text },
+        voice: {
+          languageCode: "ja-JP",
+          name: "ja-JP-Standard-A",
+          ssmlGender: voiceGender || "NEUTRAL"
+        },
+        audioConfig: { audioEncoding: "MP3" }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "Unknown error");
+    throw new Error(`TTS API error (${response.status}): ${errText}`);
+  }
+
+  const json = await response.json();
+  return json.audioContent; // base64-encoded MP3
 }
