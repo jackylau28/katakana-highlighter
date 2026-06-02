@@ -13,7 +13,9 @@
 
 body {
   margin: 0;
-  min-width: 260px;
+  min-width: 320px;
+  max-width: 420px;
+  max-height: 600px;
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", system-ui, sans-serif;
@@ -70,4 +72,107 @@ hr {
 
 .secondary-btn {
   width: 100%;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.history-header .secondary-btn {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.history-list {
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.history-item {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-item:last-child {
+  border-bottom: 0;
+}
+
+.history-text-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.history-source {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-arrow {
+  font-size: 12px;
+  color: #475569;
+}
+
+.history-converted {
+  font-size: 13px;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.history-meta {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.history-note {
+  font-size: 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+}
+
+.history-note-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.history-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.history-actions button {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+}
+
+.history-empty {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
 }

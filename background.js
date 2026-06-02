@@ -3,6 +3,64 @@ const MENU_MODE_PARENT_ID = "reading-output-mode";
 const MENU_MODE_KATAKANA_ID = "mode-katakana";
 const MENU_MODE_HIRAGANA_ID = "mode-hiragana";
 const DEFAULT_OUTPUT_MODE = "katakana";
+const MAX_HISTORY = 100;
+
+// 生成简单 UUID
+function uuid() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === "x" ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// 获取历史记录
+async function getHistory() {
+  const { history = [] } = await chrome.storage.local.get("history");
+  return history;
+}
+
+// 添加历史记录
+async function addHistory(sourceText, convertedText, outputMode, url) {
+  const history = await getHistory();
+  const newItem = {
+    id: uuid(),
+    sourceText,
+    convertedText,
+    outputMode,
+    timestamp: Date.now(),
+    url: url || "",
+    note: ""
+  };
+  history.unshift(newItem);
+  if (history.length > MAX_HISTORY) {
+    history.pop();
+  }
+  await chrome.storage.local.set({ history });
+  return newItem;
+}
+
+// 更新历史记录的笔记
+async function updateHistoryNote(id, note) {
+  const history = await getHistory();
+  const item = history.find(item => item.id === id);
+  if (item) {
+    item.note = note;
+    await chrome.storage.local.set({ history });
+  }
+}
+
+// 删除单条历史记录
+async function deleteHistory(id) {
+  const history = await getHistory();
+  const filtered = history.filter(item => item.id !== id);
+  await chrome.storage.local.set({ history: filtered });
+}
+
+// 清空历史记录
+async function clearHistory() {
+  await chrome.storage.local.set({ history: [] });
+}
 
 // 安裝外掛時建立右鍵選單，並依照已儲存模式勾選預設值。
 chrome.runtime.onInstalled.addListener(() => {
@@ -71,28 +129,64 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     sourceText: info.selectionText,
     convertedText,
     outputMode: normalizedMode,
-    fromContextMenu: true
+    fromContextMenu: true,
+    url: tab.url
   });
 });
 
 // 接收內容腳本要求，回傳目前模式下的轉換結果。
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== "CONVERT_READING") {
-    return;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "CONVERT_READING") {
+    (async () => {
+      try {
+        const { outputMode = DEFAULT_OUTPUT_MODE } = await chrome.storage.sync.get("outputMode");
+        const normalizedMode = normalizeMode(outputMode);
+        const convertedText = await convertReading(message.text || "", normalizedMode);
+        const newHistoryItem = await addHistory(
+          message.text,
+          convertedText,
+          normalizedMode,
+          sender.url || ""
+        );
+        sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: newHistoryItem.id });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err) });
+      }
+    })();
+    return true;
   }
 
-  (async () => {
-    try {
-      const { outputMode = DEFAULT_OUTPUT_MODE } = await chrome.storage.sync.get("outputMode");
-      const normalizedMode = normalizeMode(outputMode);
-      const convertedText = await convertReading(message.text || "", normalizedMode);
-      sendResponse({ ok: true, convertedText, outputMode: normalizedMode });
-    } catch (error) {
-      sendResponse({ ok: false, error: String(error) });
-    }
-  })();
+  if (message?.type === "GET_HISTORY") {
+    (async () => {
+      const history = await getHistory();
+      sendResponse({ ok: true, history });
+    })();
+    return true;
+  }
 
-  return true;
+  if (message?.type === "UPDATE_NOTE") {
+    (async () => {
+      await updateHistoryNote(message.id, message.note);
+      sendResponse({ ok: true });
+    })();
+    return true;
+  }
+
+  if (message?.type === "DELETE_HISTORY") {
+    (async () => {
+      await deleteHistory(message.id);
+      sendResponse({ ok: true });
+    })();
+    return true;
+  }
+
+  if (message?.type === "CLEAR_HISTORY") {
+    (async () => {
+      await clearHistory();
+      sendResponse({ ok: true });
+    })();
+    return true;
+  }
 });
 
 // 主要轉換流程：先檢查日文，再呼叫 Yahoo API，失敗時走本地 fallback。
@@ -210,5 +304,5 @@ function normalizeMode(mode) {
 
 // 檢查字串是否包含日文（平假名/片假名/漢字）。
 function containsJapanese(text) {
-  return /[\u3040-\u30ff\u3400-\u9fff]/.test(text || "");
+  return /[぀-ヿ㐀-鿿]/.test(text || "");
 }

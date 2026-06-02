@@ -18,7 +18,7 @@ document.addEventListener("selectionchange", () => {
 
 // 使用者放開滑鼠後，讀取反白文字並請背景腳本進行轉換。
 document.addEventListener("mouseup", async () => {
-    
+
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) {
     return;
@@ -55,12 +55,12 @@ document.addEventListener("mouseup", async () => {
     return;
   }
 
-  showBubble(rect, text, response.convertedText, response.outputMode);
+  showBubble(rect, text, response.convertedText, response.outputMode, response.historyItemId);
 });
 
 // 接收背景腳本主動回傳（例如右鍵選單觸發）的轉換結果。
 chrome.runtime.onMessage.addListener((message) => {
-    
+
   if (message?.type !== "SHOW_READING_RESULT") {
     return;
   }
@@ -80,12 +80,13 @@ chrome.runtime.onMessage.addListener((message) => {
     rect,
     message.sourceText || "",
     message.convertedText || "",
-    message.outputMode || "katakana"
+    message.outputMode || "katakana",
+    null // 右鍵選單触发的暂时没关联 historyItemId
   );
 });
 
 // 在反白位置附近顯示轉換結果泡泡。
-async function showBubble(rect, sourceText, convertedText, outputMode) {
+async function showBubble(rect, sourceText, convertedText, outputMode, historyItemId) {
 
   if(sourceText== convertedText){
     return;
@@ -132,6 +133,7 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
     event.preventDefault();
   });
 
+  // 📌 釘選按鈕
   const pinBtn = document.createElement("button");
   pinBtn.className = "khb-pin-btn";
   pinBtn.type = "button";
@@ -151,6 +153,7 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
       currentBubbleEl.dataset.pinned = "false";
       pinBtn.title = "釘選泡泡";
       pinBtn.textContent = "📌 釘選";
+      noteArea.style.display = "none";
 
       // 取消釘選後，將此泡泡收回為唯一暫存泡泡，讓「清除反白」可自動隱藏。
       if (transientBubbleEl && transientBubbleEl !== currentBubbleEl) {
@@ -165,33 +168,83 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
     currentBubbleEl.dataset.pinned = "true";
     pinBtn.title = "取消釘選";
     pinBtn.textContent = "📌 已釘選";
+    if (historyItemId) noteArea.style.display = "block";
     if (transientBubbleEl === currentBubbleEl) {
       transientBubbleEl = null;
     }
   });
   tools.appendChild(pinBtn);
 
-  const src = document.createElement("div");
-  src.className = "khb-source";
-  src.textContent = sourceText;
+  // 📋 複製按鈕
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "khb-pin-btn";
+  copyBtn.type = "button";
+  copyBtn.title = "複製假名";
+  copyBtn.textContent = "📋 複製";
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(convertedText);
+      copyBtn.textContent = "✅ 已複製";
+      setTimeout(() => {
+        copyBtn.textContent = "📋 複製";
+      }, 1000);
+    } catch (err) {
+      if (DEBUG) console.warn("[katakana-highlighter] copy failed:", err);
+    }
+  });
+  tools.appendChild(copyBtn);
 
-  const arrow = document.createElement("div");
-  arrow.className = "khb-arrow";
-  arrow.textContent = "→";
+  // 🗒️ 笔记区域（只在钉选且有 historyItemId 时显示）
+  const noteArea = document.createElement("div");
+  noteArea.style.display = "none";
+  noteArea.style.marginTop = "8px";
 
-  const label = document.createElement("div");
-  label.className = "khb-label";
-  label.textContent = outputMode === "hiragana" ? "平仮名" : "カタカナ";
+  const noteInput = document.createElement("textarea");
+  noteInput.placeholder = "加筆記...";
+  noteInput.style.width = "100%";
+  noteInput.style.minHeight = "60px";
+  noteInput.style.padding = "8px";
+  noteInput.style.border = "1px solid #475569";
+  noteInput.style.borderRadius = "8px";
+  noteInput.style.background = "#1e293b";
+  noteInput.style.color = "#e2e8f0";
+  noteInput.style.resize = "vertical";
+  noteArea.appendChild(noteInput);
+
+  if (historyItemId) {
+    // 尝试加载已有的笔记
+    chrome.storage.local.get("history").then(({ history = [] }) => {
+      const item = history.find(h => h.id === historyItemId);
+      if (item && item.note) {
+        noteInput.value = item.note;
+      }
+    });
+
+    // 笔记输入防抖保存
+    let saveTimeout;
+    noteInput.addEventListener("input", () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(async () => {
+        try {
+          await chrome.runtime.sendMessage({
+            type: "UPDATE_NOTE",
+            id: historyItemId,
+            note: noteInput.value
+          });
+        } catch (err) {
+          if (DEBUG) console.warn("[katakana-highlighter] save note failed:", err);
+        }
+      }, 500);
+    });
+  }
 
   const kata = document.createElement("div");
   kata.className = "khb-katakana";
   kata.textContent = convertedText;
 
-//   bubbleEl.appendChild(src);
-//   bubbleEl.appendChild(arrow);
-//   bubbleEl.appendChild(label);
   transientBubbleEl.appendChild(kata);
   transientBubbleEl.appendChild(tools);
+  transientBubbleEl.appendChild(noteArea);
 
   transientBubbleEl.classList.remove("pinned");
 
@@ -248,7 +301,7 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
 
 // 前端快速檢查：只處理包含日文字元的反白內容。
 function containsJapanese(text) {
-  return /[\u3040-\u30ff\u3400-\u9fff]/.test(text);
+  return /[぀-ヿ㐀-鿿]/.test(text);
 }
 
 // 清除自動消失計時器。
