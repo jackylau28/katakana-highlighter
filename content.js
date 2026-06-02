@@ -1,3 +1,4 @@
+const DEBUG = false;
 let transientBubbleEl = null;
 let autoHideTimer = null;
 
@@ -88,12 +89,12 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
       "bubblePosition",
       "bubbleDuration"
     ]);
-    console.log("[katakana-highlighter] loaded settings:", settings);
+    if (DEBUG) console.log("[katakana-highlighter] loaded settings:", settings);
     if (settings.bubbleBgColor) bubbleBgColor = settings.bubbleBgColor;
     if (settings.bubblePosition) bubblePosition = settings.bubblePosition;
     if (typeof settings.bubbleDuration === "number") bubbleDuration = settings.bubbleDuration;
   } catch (err) {
-    console.warn("[katakana-highlighter] failed to load settings, using defaults:", err);
+    if (DEBUG) console.warn("[katakana-highlighter] failed to load settings, using defaults:", err);
   }
 
   // 每次只維持一個「暫存泡泡」；已釘選泡泡會保留在頁面上。
@@ -183,15 +184,14 @@ async function showBubble(rect, sourceText, convertedText, outputMode) {
 
   // 根據位置設定計算定位。
   if (bubblePosition === "fixed-bottom") {
-    // 固定在頁面底部，全寬顯示，不隨捲動移動。
+    // 固定在頁面底部，80% 寬居中，不隨捲動移動。
     transientBubbleEl.style.position = "fixed";
     transientBubbleEl.style.bottom = "0";
     transientBubbleEl.style.top = "";
-    transientBubbleEl.style.left = "0";
+    transientBubbleEl.style.left = "10vw";
     transientBubbleEl.style.right = "";
     transientBubbleEl.style.maxWidth = "80vw";
     transientBubbleEl.style.borderRadius = "10px";
-    transientBubbleEl.style.left = "10vw";
     transientBubbleEl.style.display = "block";
   } else {
     // absolute 定位：先設定水平位置再測量高度。

@@ -81,6 +81,16 @@ button {
   cursor: pointer;
 }
 
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-btn {
+  background: #e2e8f0;
+  color: #475569;
+}
+
 #status {
   margin-top: 10px;
   min-height: 20px;

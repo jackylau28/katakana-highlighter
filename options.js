@@ -1,8 +1,10 @@
+const DEBUG = false;
 const clientIdInput = document.getElementById("clientId");
 const bubbleBgColorInput = document.getElementById("bubbleBgColor");
 const bubblePositionSelect = document.getElementById("bubblePosition");
 const bubbleDurationInput = document.getElementById("bubbleDuration");
 const saveBtn = document.getElementById("saveBtn");
+const resetBtn = document.getElementById("resetBtn");
 const statusEl = document.getElementById("status");
 
 const DEFAULTS = {
@@ -28,8 +30,16 @@ saveBtn.addEventListener("click", async () => {
     bubblePosition,
     bubbleDuration
   });
-  console.log("[katakana-highlighter] saved settings:", { bubbleBgColor, bubblePosition, bubbleDuration });
-  statusEl.textContent = "Saved.";
+  if (DEBUG) console.log("[katakana-highlighter] saved settings:", { bubbleBgColor, bubblePosition, bubbleDuration });
+  statusEl.textContent = "已儲存";
+});
+
+// 重置所有設定至預設值。
+resetBtn.addEventListener("click", async () => {
+  await chrome.storage.sync.set(DEFAULTS);
+  if (DEBUG) console.log("[katakana-highlighter] reset to defaults:", DEFAULTS);
+  await init();
+  statusEl.textContent = "已重置為預設值";
 });
 
 // 初始化設定欄位內容。

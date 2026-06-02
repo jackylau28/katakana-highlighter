@@ -1,45 +1,48 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Japanese Highlight to Katakana - Settings</title>
+    <title>Japanese Highlight to Katakana - 設定</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <main class="panel">
       <h1>Japanese Highlight to Katakana</h1>
       <p>
-        Set your Yahoo Developer Client ID for Furigana API conversion.
+        設定 Yahoo Developer Client ID 以使用假名轉換 API。
       </p>
 
       <label for="clientId">Yahoo Client ID</label>
-      <input id="clientId" type="password" placeholder="Yahoo Client ID" autocomplete="off" />
+      <input id="clientId" type="password" placeholder="輸入你的 Yahoo Client ID" autocomplete="off" />
 
-      <button id="saveBtn" type="button">Save</button>
+      <div class="button-group">
+        <button id="saveBtn" type="button">儲存</button>
+        <button id="resetBtn" type="button" class="secondary-btn">重置預設</button>
+      </div>
       <p id="status" aria-live="polite"></p>
 
       <hr />
 
-      <h2>Bubble Settings</h2>
+      <h2>泡泡設定</h2>
 
-      <label for="bubbleBgColor">Background Color</label>
+      <label for="bubbleBgColor">背景顏色</label>
       <input id="bubbleBgColor" type="color" />
 
-      <label for="bubblePosition">Position</label>
+      <label for="bubblePosition">顯示位置</label>
       <select id="bubblePosition">
-        <option value="bottom">Below selection (Bottom)</option>
-        <option value="top">Above selection (Top)</option>
-        <option value="fixed-bottom">Fixed to page bottom</option>
+        <option value="bottom">選取下方</option>
+        <option value="top">選取上方</option>
+        <option value="fixed-bottom">頁面底部（固定）</option>
       </select>
 
-      <label for="bubbleDuration">Auto-Disappear (seconds)</label>
-      <input id="bubbleDuration" type="number" min="0" max="60" step="1" placeholder="0 = never" />
-      <p class="hint" style="margin-top:-6px;">Set to 0 to keep the bubble visible until selection is cleared.</p>
+      <label for="bubbleDuration">自動消失（秒）</label>
+      <input id="bubbleDuration" type="number" min="0" max="60" step="1" placeholder="0 = 永不消失" />
+      <p class="hint" style="margin-top:-6px;">設為 0 則泡泡會一直顯示直到取消選取。</p>
 
       <hr />
       <p class="hint">
-        Create your app at Yahoo Developer Network and copy Client ID.
+        在 Yahoo Developer Network 建立應用程式後複製 Client ID 至此。
       </p>
     </main>
     <script src="options.js"></script>
