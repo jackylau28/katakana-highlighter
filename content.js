@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 let transientBubbleEl = null;
 let autoHideTimer = null;
 
@@ -197,46 +197,39 @@ async function showBubble(rect, sourceText, convertedText, outputMode, historyIt
   });
   tools.appendChild(copyBtn);
 
-  // 🔊 發音按鈕（使用 Google Cloud TTS API）
+  // 🔊 發音按鈕（使用 Chrome 內建 Web Speech API，支援日語）
   const playBtn = document.createElement("button");
   playBtn.className = "khb-pin-btn";
   playBtn.type = "button";
   playBtn.title = "發音";
   playBtn.textContent = "🔊 發音";
-  playBtn.addEventListener("click", async () => {
-    try {
-      playBtn.textContent = "⏳ 發音中...";
-      playBtn.disabled = true;
-      const response = await chrome.runtime.sendMessage({
-        type: "SYNTHESIZE_SPEECH",
-        text: convertedText
-      });
-      if (!response?.ok) {
-        playBtn.textContent = "❌ 失敗";
-        setTimeout(() => { playBtn.textContent = "🔊 發音"; playBtn.disabled = false; }, 1500);
-        if (DEBUG) console.warn("[katakana-highlighter] TTS error:", response?.error);
-        return;
-      }
-      // base64 → blob → audio element
-      const audioBytes = atob(response.audioContent);
-      const byteArray = new Uint8Array(audioBytes.length);
-      for (let i = 0; i < audioBytes.length; i++) {
-        byteArray[i] = audioBytes.charCodeAt(i);
-      }
-      const blob = new Blob([byteArray], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        playBtn.textContent = "🔊 發音";
-        playBtn.disabled = false;
-      };
-      audio.play();
-    } catch (err) {
-      if (DEBUG) console.warn("[katakana-highlighter] playback failed:", err);
+  playBtn.addEventListener("click", () => {
+    if (playBtn.dataset.playing === "true") {
+      window.speechSynthesis.cancel();
+      playBtn.dataset.playing = "false";
       playBtn.textContent = "🔊 發音";
-      playBtn.disabled = false;
+      return;
     }
+    const utterance = new SpeechSynthesisUtterance(convertedText);
+    utterance.lang = "ja-JP";
+    // 嘗試選用日語語音
+    const voices = window.speechSynthesis.getVoices();
+    const jpVoice = voices.find(v => v.lang.startsWith("ja"));
+    if (jpVoice) utterance.voice = jpVoice;
+    utterance.rate = 0.9;
+    utterance.onstart = () => {
+      playBtn.dataset.playing = "true";
+      playBtn.textContent = "⏹️ 停止";
+    };
+    utterance.onend = () => {
+      playBtn.dataset.playing = "false";
+      playBtn.textContent = "🔊 發音";
+    };
+    utterance.onerror = () => {
+      playBtn.dataset.playing = "false";
+      playBtn.textContent = "🔊 發音";
+    };
+    window.speechSynthesis.speak(utterance);
   });
   tools.appendChild(playBtn);
 
