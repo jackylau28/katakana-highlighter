@@ -134,6 +134,139 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   });
 });
 
+// 使用 Google Cloud Text-to-Speech API 合成日語語音。
+async function synthesizeSpeech(text, apiKey) {
+  const response = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode: "ja-JP", ssmlGender: "NEUTRAL" },
+        audioConfig: { audioEncoding: "MP3", speakingRate: 1.0, pitch: 0.0 }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Google TTS error (${response.status}): ${errText}`);
+  }
+
+  const json = await response.json();
+  if (!json.audioContent) {
+    throw new Error("Google TTS returned no audio data");
+  }
+
+  // audioContent is base64-encoded MP3
+  return `data:audio/mp3;base64,${json.audioContent}`;
+}
+
+// 使用 Gemini 3.1 Flash TTS API 合成日語語音。
+async function synthesizeSpeechGemini(text, apiKey) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: "Kore" }
+            }
+          }
+        }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini TTS error (${response.status}): ${errText}`);
+  }
+
+  const json = await response.json();
+  const part = json?.candidates?.[0]?.content?.parts?.[0];
+  if (!part?.inlineData?.data) {
+    throw new Error("Gemini TTS returned no audio data");
+  }
+
+  // Decode base64 PCM → wrap in WAV header
+  const b64data = part.inlineData.data;
+  const raw = Uint8Array.from(atob(b64data), c => c.charCodeAt(0));
+  const sampleRate = 24000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+  const blockAlign = numChannels * bitsPerSample / 8;
+  const dataSize = raw.length;
+  const headerSize = 44;
+
+  const wavHeader = new ArrayBuffer(headerSize);
+  const dv = new DataView(wavHeader);
+  const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(off + i, str.charCodeAt(i)); };
+
+  writeStr(0, "RIFF");
+  dv.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  dv.setUint32(16, 16, true);
+  dv.setUint16(20, 1, true);
+  dv.setUint16(22, numChannels, true);
+  dv.setUint32(24, sampleRate, true);
+  dv.setUint32(28, byteRate, true);
+  dv.setUint16(32, blockAlign, true);
+  dv.setUint16(34, bitsPerSample, true);
+  writeStr(36, "data");
+  dv.setUint32(40, dataSize, true);
+
+  const wav = new Uint8Array(headerSize + dataSize);
+  wav.set(new Uint8Array(wavHeader), 0);
+  wav.set(raw, headerSize);
+
+  const blob = new Blob([wav], { type: "audio/wav" });
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Failed to read audio blob"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+// 使用 Microsoft Azure TTS API 合成日語語音。
+async function synthesizeSpeechAzure(text, apiKey, region, voiceName) {
+  const response = await fetch(
+    `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    {
+      method: "POST",
+      headers: {
+        "Ocp-Apim-Subscription-Key": apiKey,
+        "Content-Type": "application/ssml+xml",
+        "X-Microsoft-OutputFormat": "audio-16khz-32kbitrate-mono-mp3"
+      },
+      body: `<speak version="1.0" xml:lang="ja-JP"><voice name="${voiceName}">${text}</voice></speak>`
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Azure TTS error (${response.status}): ${errText}`);
+  }
+
+  // Response is binary MP3 → convert to blob data URL
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Failed to read audio blob"));
+    reader.readAsDataURL(blob);
+  });
+}
+
 // 接收內容腳本要求，回傳目前模式下的轉換結果。
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "CONVERT_READING") {
@@ -189,6 +322,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       await clearHistory();
       sendResponse({ ok: true });
+    })();
+    return true;
+  }
+
+  if (message?.type === "SYNTHESIZE_SPEECH") {
+    (async () => {
+      try {
+        const { ttsEngine = "google", googleApiKey = "", geminiApiKey = "", azureApiKey = "", azureRegion = "japaneast", azureVoice = "ja-JP-NanamiNeural" } = await chrome.storage.sync.get(["ttsEngine", "googleApiKey", "geminiApiKey", "azureApiKey", "azureRegion", "azureVoice"]);
+        let audioDataUrl;
+        if (ttsEngine === "gemini") {
+          if (!geminiApiKey) {
+            sendResponse({ ok: false, error: "請先在設定頁填入 Gemini API Key" });
+            return;
+          }
+          audioDataUrl = await synthesizeSpeechGemini(message.text, geminiApiKey);
+        } else if (ttsEngine === "azure") {
+          if (!azureApiKey) {
+            sendResponse({ ok: false, error: "請先在設定頁填入 Azure API Key" });
+            return;
+          }
+          audioDataUrl = await synthesizeSpeechAzure(message.text, azureApiKey, azureRegion, azureVoice);
+        } else {
+          if (!googleApiKey) {
+            sendResponse({ ok: false, error: "請先在設定頁填入 Google Cloud API Key" });
+            return;
+          }
+          audioDataUrl = await synthesizeSpeech(message.text, googleApiKey);
+        }
+        sendResponse({ ok: true, audioDataUrl });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err) });
+      }
     })();
     return true;
   }

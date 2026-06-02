@@ -1,5 +1,11 @@
 const DEBUG = false;
 const clientIdInput = document.getElementById("clientId");
+const googleApiKeyInput = document.getElementById("googleApiKey");
+const geminiApiKeyInput = document.getElementById("geminiApiKey");
+const azureApiKeyInput = document.getElementById("azureApiKey");
+const azureRegionInput = document.getElementById("azureRegion");
+const azureVoiceSelect = document.getElementById("azureVoice");
+const ttsEngineSelect = document.getElementById("ttsEngine");
 const bubbleBgColorInput = document.getElementById("bubbleBgColor");
 const bubblePositionSelect = document.getElementById("bubblePosition");
 const bubbleDurationInput = document.getElementById("bubbleDuration");
@@ -10,6 +16,12 @@ const statusEl = document.getElementById("status");
 
 const DEFAULTS = {
   yahooClientId: "",
+  googleApiKey: "",
+  geminiApiKey: "",
+  azureApiKey: "",
+  azureRegion: "japaneast",
+  azureVoice: "ja-JP-NanamiNeural",
+  ttsEngine: "google",
   bubbleBgColor: "#0f172a",
   bubblePosition: "bottom",
   bubbleDuration: 0,
@@ -22,6 +34,12 @@ init();
 // 儲存所有設定。
 saveBtn.addEventListener("click", async () => {
   const yahooClientId = clientIdInput.value.trim();
+  const googleApiKey = googleApiKeyInput.value.trim();
+  const geminiApiKey = geminiApiKeyInput.value.trim();
+  const azureApiKey = azureApiKeyInput.value.trim();
+  const azureRegion = azureRegionInput.value.trim() || DEFAULTS.azureRegion;
+  const azureVoice = azureVoiceSelect.value || DEFAULTS.azureVoice;
+  const ttsEngine = ttsEngineSelect.value || DEFAULTS.ttsEngine;
   const bubbleBgColor = bubbleBgColorInput.value || DEFAULTS.bubbleBgColor;
   const bubblePosition = bubblePositionSelect.value || DEFAULTS.bubblePosition;
   const bubbleDuration = Math.max(0, parseInt(bubbleDurationInput.value, 10) || 0);
@@ -29,6 +47,12 @@ saveBtn.addEventListener("click", async () => {
 
   await chrome.storage.sync.set({
     yahooClientId,
+    googleApiKey,
+    geminiApiKey,
+    azureApiKey,
+    azureRegion,
+    azureVoice,
+    ttsEngine,
     bubbleBgColor,
     bubblePosition,
     bubbleDuration,
@@ -50,12 +74,24 @@ resetBtn.addEventListener("click", async () => {
 async function init() {
   const {
     yahooClientId = DEFAULTS.yahooClientId,
+    googleApiKey = DEFAULTS.googleApiKey,
+    geminiApiKey = DEFAULTS.geminiApiKey,
+    azureApiKey = DEFAULTS.azureApiKey,
+    azureRegion = DEFAULTS.azureRegion,
+    azureVoice = DEFAULTS.azureVoice,
+    ttsEngine = DEFAULTS.ttsEngine,
     bubbleBgColor = DEFAULTS.bubbleBgColor,
     bubblePosition = DEFAULTS.bubblePosition,
     bubbleDuration = DEFAULTS.bubbleDuration,
     historyOnOff = DEFAULTS.historyOnOff
   } = await chrome.storage.sync.get([
     "yahooClientId",
+    "googleApiKey",
+    "geminiApiKey",
+    "azureApiKey",
+    "azureRegion",
+    "azureVoice",
+    "ttsEngine",
     "bubbleBgColor",
     "bubblePosition",
     "bubbleDuration",
@@ -63,6 +99,12 @@ async function init() {
   ]);
 
   clientIdInput.value = yahooClientId;
+  googleApiKeyInput.value = googleApiKey;
+  geminiApiKeyInput.value = geminiApiKey;
+  azureApiKeyInput.value = azureApiKey;
+  azureRegionInput.value = azureRegion;
+  azureVoiceSelect.value = azureVoice;
+  ttsEngineSelect.value = ttsEngine;
   bubbleBgColorInput.value = bubbleBgColor;
   bubblePositionSelect.value = bubblePosition;
   bubbleDurationInput.value = bubbleDuration;

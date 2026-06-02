@@ -16,6 +16,36 @@
       <label for="clientId">Yahoo Client ID</label>
       <input id="clientId" type="password" placeholder="輸入你的 Yahoo Client ID" autocomplete="off" />
 
+      <label for="googleApiKey">Google Cloud API Key</label>
+      <input id="googleApiKey" type="password" placeholder="輸入你的 Google Cloud API Key（用於發音）" autocomplete="off" />
+
+      <label for="geminiApiKey">Gemini API Key</label>
+      <input id="geminiApiKey" type="password" placeholder="輸入你的 Gemini API Key（用於發音）" autocomplete="off" />
+
+      <label for="azureApiKey">Azure API Key</label>
+      <input id="azureApiKey" type="password" placeholder="輸入你的 Azure TTS API Key" autocomplete="off" />
+
+      <label for="azureRegion">Azure 區域</label>
+      <input id="azureRegion" type="text" placeholder="japaneast" value="japaneast" />
+
+      <label for="azureVoice">Azure 聲音</label>
+      <select id="azureVoice">
+        <option value="ja-JP-NanamiNeural">Nanami（女性）</option>
+        <option value="ja-JP-KeitaNeural">Keita（男性）</option>
+        <option value="ja-JP-AoiNeural">Aoi（女性）</option>
+        <option value="ja-JP-DaichiNeural">Daichi（男性）</option>
+        <option value="ja-JP-MayuNeural">Mayu（女性）</option>
+        <option value="ja-JP-NaokiNeural">Naoki（男性）</option>
+        <option value="ja-JP-ShioriNeural">Shiori（女性）</option>
+      </select>
+
+      <label for="ttsEngine">發音引擎</label>
+      <select id="ttsEngine">
+        <option value="google">Google Cloud TTS</option>
+        <option value="gemini">Gemini TTS</option>
+        <option value="azure">Azure TTS</option>
+      </select>
+
       <div class="button-group">
         <button id="saveBtn" type="button">儲存</button>
         <button id="resetBtn" type="button" class="secondary-btn">重置預設</button>

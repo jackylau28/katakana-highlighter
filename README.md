@@ -8,6 +8,7 @@
 - 泡泡可釘選，並可加筆記。
 - 歷史記錄功能，可複製、加筆記、刪除、匯出 CSV。
 - 泡泡設定：背景色、顯示位置（下方/上方/頁面底部固定）、自動消失秒數。
+- 泡泡內有 🔊 發音按鈕，使用 Gemini 3.1 Flash TTS API 播放日語發音。
 
 ## 專案結構
 
@@ -40,6 +41,9 @@
 | `updateHistoryNote(id, note)` | 更新歷史記錄的筆記 |
 | `deleteHistory(id)` | 刪除指定歷史記錄 |
 | `clearHistory()` | 清空所有歷史記錄 |
+| `synthesizeSpeech(text, apiKey)` | 呼叫 Google Cloud Text-to-Speech API 合成語音，回傳 MP3 data URL |
+| `synthesizeSpeechGemini(text, apiKey)` | 呼叫 Gemini 3.1 Flash TTS API 合成語音，回傳 WAV data URL |
+| `synthesizeSpeechAzure(text, apiKey, region, voiceName)` | 呼叫 Microsoft Azure TTS API 合成語音，回傳 MP3 data URL |
 
 ### content.js
 | 函式 | 說明 |
@@ -49,6 +53,8 @@
 | `hideTransientBubble()` | 隱藏暫存泡泡並清除計時器 |
 | `createBubbleElement()` | 建立泡泡 DOM 元素 |
 | `clearAutoHideTimer()` | 清除自動消失計時器 |
+
+泡泡含功能按鈕：📌 釘選、📋 複製、🔊 發音（Gemini TTS）。
 
 ### popup.js
 | 函式 | 說明 |
@@ -73,6 +79,7 @@
 1. **自動偵測**：反白日文 → content.js 發送 `CONVERT_READING` → background.js 呼叫 API → 回傳結果 → 顯示泡泡
 2. **右鍵選單**：右鍵 → `Convert selection` → background.js 呼叫 API → 發送 `SHOW_READING_RESULT` → content.js 顯示泡泡
 3. **模式切換**：popup 或右鍵選單 → `chrome.storage.sync.set({ outputMode })`
+4. **發音**：點擊 🔊 → content.js 發送 `SYNTHESIZE_SPEECH` → background.js 依 `ttsEngine` 設定呼叫對應 API（Google / Gemini / Azure TTS）→ 回傳 audio data URL → content.js 播放
 
 ## 設定選項
 
@@ -80,6 +87,12 @@
 
 | 設定 | 預設值 | 說明 |
 |------|--------|------|
+| `googleApiKey` | `""` | Google Cloud API Key（用於 🔊 Google Cloud TTS 發音） |
+| `geminiApiKey` | `""` | Gemini API Key（用於 🔊 Gemini TTS 發音） |
+| `azureApiKey` | `""` | Azure API Key（用於 🔊 Azure TTS 發音） |
+| `azureRegion` | `"japaneast"` | Azure 區域（如 japaneast、eastasia、eastus） |
+| `azureVoice` | `"ja-JP-NanamiNeural"` | Azure 聲音名稱（Nanami/Keita/Aoi 等） |
+| `ttsEngine` | `"google"` | 發音引擎：`google`（Google Cloud TTS）/ `gemini`（Gemini TTS）/ `azure`（Azure TTS） |
 | `bubbleBgColor` | `#0f172a` | 泡泡背景色 |
 | `bubblePosition` | `bottom` | 泡泡顯示位置：`bottom`（選取下方）/ `top`（選取上方）/ `fixed-bottom`（頁面底部固定） |
 | `bubbleDuration` | `0` | 自動消失秒數，`0` = 永不自動消失 |
@@ -89,13 +102,17 @@
 ## 注意事項
 - 漢字轉讀音使用 `Yahoo Japan Furigana API`。
 - 需要先設定 Yahoo Developer 的 `Client ID`。
+- 發音功能支援三種引擎：`Google Cloud TTS`、`Gemini 3.1 Flash TTS`、`Azure TTS`，可在設定頁選擇。
+- 使用 Google Cloud TTS 需在 GCP 主控台啟用 Cloud Text-to-Speech API。
+- 使用 Gemini TTS 需在 [Google AI Studio](https://aistudio.google.com/apikey) 取得 API Key。
+- 使用 Azure TTS 需在 Azure 入口建立 Speech 資源，取得 API Key 和區域。
 
 ## 安裝步驟
 1. 打開 `chrome://extensions`。
 2. 開啟 **Developer mode（開發人員模式）**。
 3. 點擊 **Load unpacked（載入未封裝項目）**。
 4. 選擇資料夾：`katakana-highlighter`。
-5. 打開外掛設定頁，貼上你的 Yahoo `Client ID`。
+5. 打開外掛設定頁，貼上你的 Yahoo `Client ID` 和 `Google Cloud API Key`（如需發音功能）。
 
 ## 使用方式
 1. 在網頁上反白日文文字。
@@ -105,5 +122,6 @@
 5. 也可右鍵已反白文字，點 `Convert selection` 手動觸發轉換。
 6. 泡泡上的 `📌 釘選` 可固定顯示；取消釘選後，清除反白時會自動隱藏。
 7. 泡泡上的 `📋 複製` 可一鍵複製假名。
-8. 釘選泡泡後可加筆記，筆記會自動保存到歷史記錄。
-9. popup 可檢視歷史記錄，支持複製、加/改筆記、刪除、匯出 CSV。
+8. 泡泡上的 `🔊 發音` 可使用 Gemini TTS 聽發音，點擊播放，再次點擊停止。
+9. 釘選泡泡後可加筆記，筆記會自動保存到歷史記錄。
+10. popup 可檢視歷史記錄，支持複製、加/改筆記、刪除、匯出 CSV。

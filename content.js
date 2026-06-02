@@ -197,6 +197,53 @@ async function showBubble(rect, sourceText, convertedText, outputMode, historyIt
   });
   tools.appendChild(copyBtn);
 
+  // 🔊 發音按鈕
+  const speakBtn = document.createElement("button");
+  speakBtn.className = "khb-pin-btn";
+  speakBtn.type = "button";
+  speakBtn.title = "發音";
+  speakBtn.textContent = "🔊 發音";
+  let isPlaying = false;
+  let audioEl = null;
+  speakBtn.addEventListener("click", async () => {
+    if (isPlaying) {
+      if (audioEl) { audioEl.pause(); audioEl = null; }
+      speakBtn.textContent = "🔊 發音";
+      isPlaying = false;
+      return;
+    }
+    speakBtn.textContent = "⏳ 發音中...";
+    isPlaying = true;
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "SYNTHESIZE_SPEECH",
+        text: convertedText
+      });
+      if (!response?.ok) {
+        throw new Error(response?.error || "發音失敗");
+      }
+      audioEl = new Audio(response.audioDataUrl);
+      audioEl.addEventListener("ended", () => {
+        speakBtn.textContent = "🔊 發音";
+        isPlaying = false;
+        audioEl = null;
+      });
+      audioEl.addEventListener("error", () => {
+        speakBtn.textContent = "❌ 發音失敗";
+        setTimeout(() => { speakBtn.textContent = "🔊 發音"; }, 1500);
+        isPlaying = false;
+        audioEl = null;
+      });
+      await audioEl.play();
+    } catch (err) {
+      if (DEBUG) console.warn("[katakana-highlighter] speech synthesis failed:", err);
+      speakBtn.textContent = "❌ 發音失敗";
+      setTimeout(() => { speakBtn.textContent = "🔊 發音"; }, 1500);
+      isPlaying = false;
+    }
+  });
+  tools.appendChild(speakBtn);
+
   // 🗒️ 笔记区域（只在钉选且有 historyItemId 时显示）
   const noteArea = document.createElement("div");
   noteArea.style.display = "none";
