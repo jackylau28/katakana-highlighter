@@ -96,17 +96,20 @@ async function showBubble(rect, sourceText, convertedText, outputMode, historyIt
   let bubbleBgColor = "#0f172a";
   let bubblePosition = "bottom";
   let bubbleDuration = 0;
+  let historyOnOff = "on";
 
   try {
     const settings = await chrome.storage.sync.get([
       "bubbleBgColor",
       "bubblePosition",
-      "bubbleDuration"
+      "bubbleDuration",
+      "historyOnOff"
     ]);
     if (DEBUG) console.log("[katakana-highlighter] loaded settings:", settings);
     if (settings.bubbleBgColor) bubbleBgColor = settings.bubbleBgColor;
     if (settings.bubblePosition) bubblePosition = settings.bubblePosition;
     if (typeof settings.bubbleDuration === "number") bubbleDuration = settings.bubbleDuration;
+    if (settings.historyOnOff) historyOnOff = settings.historyOnOff;
   } catch (err) {
     if (DEBUG) console.warn("[katakana-highlighter] failed to load settings, using defaults:", err);
   }
@@ -168,7 +171,7 @@ async function showBubble(rect, sourceText, convertedText, outputMode, historyIt
     currentBubbleEl.dataset.pinned = "true";
     pinBtn.title = "取消釘選";
     pinBtn.textContent = "📌 已釘選";
-    if (historyItemId) noteArea.style.display = "block";
+    if (historyItemId && historyOnOff === "on") noteArea.style.display = "block";
     if (transientBubbleEl === currentBubbleEl) {
       transientBubbleEl = null;
     }

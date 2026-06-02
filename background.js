@@ -140,15 +140,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       try {
         const { outputMode = DEFAULT_OUTPUT_MODE } = await chrome.storage.sync.get("outputMode");
+        const {historyOnOff = "on"} = await chrome.storage.sync.get("historyOnOff");
         const normalizedMode = normalizeMode(outputMode);
         const convertedText = await convertReading(message.text || "", normalizedMode);
-        const newHistoryItem = await addHistory(
-          message.text,
-          convertedText,
-          normalizedMode,
-          sender.url || ""
-        );
-        sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: newHistoryItem.id });
+        if (historyOnOff === "on") {
+            const newHistoryItem = await addHistory(
+            message.text,
+            convertedText,
+            normalizedMode,
+            sender.url || ""
+            );
+            sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: newHistoryItem.id });
+        }     else {
+            sendResponse({ ok: true, convertedText, outputMode: normalizedMode, historyItemId: null });
+        }   
       } catch (err) {
         sendResponse({ ok: false, error: String(err) });
       }
